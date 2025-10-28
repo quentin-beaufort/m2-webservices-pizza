@@ -9,10 +9,20 @@
 <body>
     <div class="container">
         <header>
-            <h1>🍕 Pizza Ordering</h1>
-            <p>Build your perfect pizza and get it delivered to your door!</p>
-            <div style="margin-top: 15px;">
-                <a href="/admin.html" style="color: white; text-decoration: none; background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 5px; font-size: 0.9em; display: inline-block; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">🔐 Admin Access</a>
+            <div class="header-content">
+                <div class="header-icon">
+                    <!-- Phosphor-style pizza icon (externalized to /public/icons) -->
+                    <img src="icons/pizza.svg" alt="Pizza" class="icon-large" />
+                </div>
+                <h1>Pizza Ordering</h1>
+                <p>Build your perfect pizza and get it delivered to your door!</p>
+                <div class="header-nav">
+                    <a href="/admin.html" class="admin-link">
+                        <!-- Phosphor-style shield-lock icon -->
+                        <img src="icons/shield-lock.svg" alt="Admin" class="icon-small" />
+                        Admin Access
+                    </a>
+                </div>
             </div>
         </header>
 
@@ -120,7 +130,10 @@
         <!-- Confirmation -->
         <section id="confirmation-section" class="section">
             <div class="confirmation-message">
-                <div class="success-icon">✓</div>
+                <div class="success-icon">
+                    <!-- Phosphor-style check-circle icon -->
+                    <img src="icons/check-circle.svg" alt="Success" class="icon-success" />
+                </div>
                 <h2>Order Confirmed!</h2>
                 <p>Thank you for your order. Your pizza is being prepared and will be delivered soon!</p>
                 <div id="confirmation-details">
