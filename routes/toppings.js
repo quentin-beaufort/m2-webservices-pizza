@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import Topping from '../models/Topping.js';
+import Pizza from '../models/Pizza.js';
+
 const router = express.Router();
-const Topping = require('../models/Topping');
-const Pizza = require('../models/Pizza');
 
 // Get all toppings
 router.get('/', async (req, res) => {
@@ -79,4 +80,4 @@ router.post('/calculate-price', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,11 +1,15 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const path = require('path');
-const sequelize = require('./config/database');
-const toppingRoutes = require('./routes/toppings');
-const orderRoutes = require('./routes/orders');
-const pizzaRoutes = require('./routes/pizzas');
+import express from 'express';
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import sequelize from './config/database.js';
+import toppingRoutes from './routes/toppings.js';
+import orderRoutes from './routes/orders.js';
+import pizzaRoutes from './routes/pizzas.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,16 +18,29 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+
+// Serve static files from dist (production) or public (development)
+const staticPath = process.env.NODE_ENV === 'production' 
+  ? path.join(__dirname, 'dist')
+  : path.join(__dirname, 'public');
+app.use(express.static(staticPath));
 
 // Routes
 app.use('/api/toppings', toppingRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/pizzas', pizzaRoutes);
 
-// Root route
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Catch-all route for SPA - serve index.html for non-API routes
+app.use((req, res, next) => {
+  // Skip if it's an API route
+  if (req.path.startsWith('/api/')) {
+    return next();
+  }
+  
+  const indexPath = process.env.NODE_ENV === 'production'
+    ? path.join(__dirname, 'dist', 'index.html')
+    : path.join(__dirname, 'index.html');
+  res.sendFile(indexPath);
 });
 
 // Initialize database and start server
@@ -33,7 +50,7 @@ const initializeApp = async () => {
     console.log('Database synchronized');
     
     // Seed initial toppings if needed
-    const Topping = require('./models/Topping');
+    const { default: Topping } = await import('./models/Topping.js');
     const count = await Topping.count();
     if (count === 0) {
       await Topping.bulkCreate([
@@ -52,7 +69,7 @@ const initializeApp = async () => {
     }
     
     // Seed base pizzas if needed
-    const Pizza = require('./models/Pizza');
+    const { default: Pizza } = await import('./models/Pizza.js');
     const pizzaCount = await Pizza.count();
     if (pizzaCount === 0) {
       await Pizza.bulkCreate([
