@@ -10,7 +10,9 @@ function escapeHtml(text) {
 
 // Application state
 const state = {
+    pizzas: [],
     toppings: [],
+    selectedPizzaId: null,
     selectedToppingIds: [],
     address: '',
     orderId: null,
@@ -20,6 +22,7 @@ const state = {
 
 // DOM Elements
 const sections = {
+    pizza: document.getElementById('pizza-section'),
     toppings: document.getElementById('toppings-section'),
     address: document.getElementById('address-section'),
     checkout: document.getElementById('checkout-section'),
@@ -29,8 +32,23 @@ const sections = {
 // Initialize app
 document.addEventListener('DOMContentLoaded', async () => {
     await loadToppings();
+    await loadPizzas();
     setupEventListeners();
 });
+
+// Load pizzas from API
+async function loadPizzas() {
+    try {
+        const response = await fetch(`${API_BASE}/pizzas`);
+        if (!response.ok) throw new Error('Failed to load pizzas');
+        
+        state.pizzas = await response.json();
+        renderPizzas();
+    } catch (error) {
+        console.error('Error loading pizzas:', error);
+        alert('Failed to load pizzas. Please refresh the page.');
+    }
+}
 
 // Load toppings from API
 async function loadToppings() {
@@ -39,11 +57,59 @@ async function loadToppings() {
         if (!response.ok) throw new Error('Failed to load toppings');
         
         state.toppings = await response.json();
-        renderToppings();
     } catch (error) {
         console.error('Error loading toppings:', error);
         alert('Failed to load toppings. Please refresh the page.');
     }
+}
+
+// Render pizzas list
+function renderPizzas() {
+    const pizzasList = document.getElementById('pizzas-list');
+    pizzasList.innerHTML = '';
+    
+    state.pizzas.forEach(pizza => {
+        const pizzaElement = document.createElement('div');
+        pizzaElement.className = 'pizza-item';
+        pizzaElement.dataset.id = pizza.id;
+        
+        if (state.selectedPizzaId === pizza.id) {
+            pizzaElement.classList.add('selected');
+        }
+        
+        // Get base topping names
+        const baseToppingNames = pizza.baseToppings
+            .map(id => {
+                const topping = state.toppings.find(t => t.id === id);
+                return topping ? topping.name : '';
+            })
+            .filter(name => name)
+            .join(', ');
+        
+        pizzaElement.innerHTML = `
+            <div class="pizza-name">${escapeHtml(pizza.name)}</div>
+            <div class="pizza-description">${escapeHtml(pizza.description || '')}</div>
+            <div class="pizza-toppings">Includes: ${escapeHtml(baseToppingNames)}</div>
+            <div class="pizza-price">$${parseFloat(pizza.basePrice).toFixed(2)}</div>
+        `;
+        
+        pizzaElement.addEventListener('click', () => selectPizza(pizza.id));
+        pizzasList.appendChild(pizzaElement);
+    });
+}
+
+// Select pizza
+function selectPizza(pizzaId) {
+    state.selectedPizzaId = pizzaId;
+    
+    // Get pizza and its base toppings
+    const pizza = state.pizzas.find(p => p.id === pizzaId);
+    if (pizza) {
+        // Initialize selected toppings with base toppings
+        state.selectedToppingIds = [...pizza.baseToppings];
+    }
+    
+    renderPizzas();
 }
 
 // Render toppings list
@@ -51,27 +117,72 @@ function renderToppings() {
     const toppingsList = document.getElementById('toppings-list');
     toppingsList.innerHTML = '';
     
+    // Get base toppings for selected pizza
+    const pizza = state.pizzas.find(p => p.id === state.selectedPizzaId);
+    const baseToppingIds = pizza ? pizza.baseToppings : [];
+    
     state.toppings.forEach(topping => {
         const toppingElement = document.createElement('div');
         toppingElement.className = 'topping-item';
         toppingElement.dataset.id = topping.id;
         
-        if (state.selectedToppingIds.includes(topping.id)) {
+        const isBaseTopping = baseToppingIds.includes(topping.id);
+        const isSelected = state.selectedToppingIds.includes(topping.id);
+        
+        if (isBaseTopping) {
+            toppingElement.classList.add('base-topping');
+        }
+        
+        if (isSelected) {
             toppingElement.classList.add('selected');
         }
         
+        const toppingLabel = isBaseTopping ? `${topping.name} (Included)` : topping.name;
+        const toppingPrice = isBaseTopping ? 'Included' : `+$${parseFloat(topping.price).toFixed(2)}`;
+        
         toppingElement.innerHTML = `
-            <div class="topping-name">${topping.name}</div>
-            <div class="topping-price">+$${parseFloat(topping.price).toFixed(2)}</div>
+            <div class="topping-name">${escapeHtml(toppingLabel)}</div>
+            <div class="topping-price">${toppingPrice}</div>
         `;
         
-        toppingElement.addEventListener('click', () => toggleTopping(topping.id));
+        if (!isBaseTopping) {
+            toppingElement.addEventListener('click', () => toggleTopping(topping.id));
+        }
+        
         toppingsList.appendChild(toppingElement);
     });
+    
+    // Update selected pizza info
+    if (pizza) {
+        const pizzaInfo = document.getElementById('selected-pizza-info');
+        const baseToppingNames = baseToppingIds
+            .map(id => {
+                const topping = state.toppings.find(t => t.id === id);
+                return topping ? topping.name : '';
+            })
+            .filter(name => name)
+            .join(', ');
+        
+        pizzaInfo.innerHTML = `
+            <div class="selected-pizza-header">
+                <strong>${escapeHtml(pizza.name)}</strong> - $${parseFloat(pizza.basePrice).toFixed(2)}
+            </div>
+            <div class="selected-pizza-base">Base toppings: ${escapeHtml(baseToppingNames)}</div>
+        `;
+    }
 }
 
 // Toggle topping selection
 function toggleTopping(toppingId) {
+    // Get base toppings for selected pizza
+    const pizza = state.pizzas.find(p => p.id === state.selectedPizzaId);
+    const baseToppingIds = pizza ? pizza.baseToppings : [];
+    
+    // Don't allow toggling base toppings
+    if (baseToppingIds.includes(toppingId)) {
+        return;
+    }
+    
     const index = state.selectedToppingIds.indexOf(toppingId);
     
     if (index > -1) {
@@ -90,7 +201,10 @@ async function updatePizzaPrice() {
         const response = await fetch(`${API_BASE}/toppings/calculate-price`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ toppingIds: state.selectedToppingIds })
+            body: JSON.stringify({ 
+                toppingIds: state.selectedToppingIds,
+                basePizzaId: state.selectedPizzaId
+            })
         });
         
         if (!response.ok) throw new Error('Failed to calculate price');
@@ -120,6 +234,20 @@ function updateTotalPrice() {
 // Setup event listeners
 function setupEventListeners() {
     // Navigation buttons
+    document.getElementById('next-to-toppings').addEventListener('click', () => {
+        if (!state.selectedPizzaId) {
+            alert('Please select a pizza first');
+            return;
+        }
+        renderToppings();
+        updatePizzaPrice();
+        showSection('toppings');
+    });
+    
+    document.getElementById('back-to-pizzas').addEventListener('click', () => {
+        showSection('pizza');
+    });
+    
     document.getElementById('next-to-address').addEventListener('click', () => {
         showSection('address');
     });
@@ -145,7 +273,7 @@ function setupEventListeners() {
     
     document.getElementById('new-order').addEventListener('click', () => {
         resetOrder();
-        showSection('toppings');
+        showSection('pizza');
     });
 }
 
@@ -173,6 +301,7 @@ async function createOrder() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                basePizzaId: state.selectedPizzaId,
                 toppingIds: state.selectedToppingIds,
                 address: state.address
             })
@@ -193,22 +322,34 @@ async function createOrder() {
 // Render order summary
 function renderOrderSummary() {
     const orderDetails = document.getElementById('order-details');
-    const selectedToppings = state.toppings.filter(t => 
-        state.selectedToppingIds.includes(t.id)
-    );
     
-    let toppingsHtml = '';
-    if (selectedToppings.length > 0) {
-        toppingsHtml = selectedToppings.map(t => escapeHtml(t.name)).join(', ');
-    } else {
-        toppingsHtml = 'No toppings (plain pizza)';
-    }
+    // Get pizza info
+    const pizza = state.pizzas.find(p => p.id === state.selectedPizzaId);
+    const pizzaName = pizza ? pizza.name : 'Unknown Pizza';
+    const baseToppingIds = pizza ? pizza.baseToppings : [];
+    
+    // Get base toppings
+    const baseToppings = state.toppings.filter(t => baseToppingIds.includes(t.id));
+    const baseToppingsNames = baseToppings.map(t => escapeHtml(t.name)).join(', ');
+    
+    // Get additional toppings (selected but not base)
+    const additionalToppingIds = state.selectedToppingIds.filter(id => !baseToppingIds.includes(id));
+    const additionalToppings = state.toppings.filter(t => additionalToppingIds.includes(t.id));
+    const additionalToppingsNames = additionalToppings.length > 0 
+        ? additionalToppings.map(t => escapeHtml(t.name)).join(', ')
+        : 'None';
     
     const escapedAddress = escapeHtml(state.address).replace(/\n/g, '<br>');
     
     orderDetails.innerHTML = `
         <div class="order-detail-item">
-            <span class="order-detail-label">Toppings:</span> ${toppingsHtml}
+            <span class="order-detail-label">Pizza:</span> ${escapeHtml(pizzaName)}
+        </div>
+        <div class="order-detail-item">
+            <span class="order-detail-label">Base Toppings:</span> ${baseToppingsNames}
+        </div>
+        <div class="order-detail-item">
+            <span class="order-detail-label">Extra Toppings:</span> ${additionalToppingsNames}
         </div>
         <div class="order-detail-item">
             <span class="order-detail-label">Delivery Address:</span><br>
@@ -244,16 +385,22 @@ async function confirmOrder() {
 // Render confirmation
 function renderConfirmation(order) {
     const confirmationDetails = document.getElementById('confirmation-details');
-    const selectedToppings = state.toppings.filter(t => 
-        state.selectedToppingIds.includes(t.id)
-    );
     
-    let toppingsHtml = '';
-    if (selectedToppings.length > 0) {
-        toppingsHtml = selectedToppings.map(t => escapeHtml(t.name)).join(', ');
-    } else {
-        toppingsHtml = 'No toppings (plain pizza)';
-    }
+    // Get pizza info
+    const pizza = state.pizzas.find(p => p.id === state.selectedPizzaId);
+    const pizzaName = pizza ? pizza.name : 'Unknown Pizza';
+    const baseToppingIds = pizza ? pizza.baseToppings : [];
+    
+    // Get base toppings
+    const baseToppings = state.toppings.filter(t => baseToppingIds.includes(t.id));
+    const baseToppingsNames = baseToppings.map(t => escapeHtml(t.name)).join(', ');
+    
+    // Get additional toppings (selected but not base)
+    const additionalToppingIds = state.selectedToppingIds.filter(id => !baseToppingIds.includes(id));
+    const additionalToppings = state.toppings.filter(t => additionalToppingIds.includes(t.id));
+    const additionalToppingsNames = additionalToppings.length > 0 
+        ? additionalToppings.map(t => escapeHtml(t.name)).join(', ')
+        : 'None';
     
     const escapedAddress = escapeHtml(order.address).replace(/\n/g, '<br>');
     
@@ -262,7 +409,13 @@ function renderConfirmation(order) {
             <span class="order-detail-label">Order #:</span> ${escapeHtml(String(order.id))}
         </div>
         <div class="order-detail-item">
-            <span class="order-detail-label">Toppings:</span> ${toppingsHtml}
+            <span class="order-detail-label">Pizza:</span> ${escapeHtml(pizzaName)}
+        </div>
+        <div class="order-detail-item">
+            <span class="order-detail-label">Base Toppings:</span> ${baseToppingsNames}
+        </div>
+        <div class="order-detail-item">
+            <span class="order-detail-label">Extra Toppings:</span> ${additionalToppingsNames}
         </div>
         <div class="order-detail-item">
             <span class="order-detail-label">Delivery Address:</span><br>
@@ -284,12 +437,12 @@ function showSection(sectionName) {
 
 // Reset order
 function resetOrder() {
+    state.selectedPizzaId = null;
     state.selectedToppingIds = [];
     state.address = '';
     state.orderId = null;
     state.pizzaPrice = 8.00;
     
     document.getElementById('address').value = '';
-    renderToppings();
-    updatePizzaPrice();
+    renderPizzas();
 }

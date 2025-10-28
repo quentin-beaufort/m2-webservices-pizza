@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Topping = require('../models/Topping');
+const Pizza = require('../models/Pizza');
 
 // Get all toppings
 router.get('/', async (req, res) => {
@@ -18,7 +19,7 @@ router.get('/', async (req, res) => {
 // Calculate price for selected toppings
 router.post('/calculate-price', async (req, res) => {
   try {
-    const { toppingIds } = req.body;
+    const { toppingIds, basePizzaId } = req.body;
     
     if (!Array.isArray(toppingIds)) {
       return res.status(400).json({ error: 'toppingIds must be an array' });
@@ -28,33 +29,48 @@ router.post('/calculate-price', async (req, res) => {
     const validIds = toppingIds.every(id => 
       Number.isInteger(id) && id > 0
     );
-    if (!validIds) {
+    if (!validIds && toppingIds.length > 0) {
       return res.status(400).json({ error: 'All topping IDs must be positive integers' });
     }
 
-    const BASE_PRICE = 8.00; // Base pizza price
+    // Get base pizza if specified, otherwise use default
+    let basePrice = 8.00;
+    let baseToppingIds = [];
     
-    if (toppingIds.length === 0) {
-      return res.json({ 
-        basePrice: BASE_PRICE,
-        toppingsPrice: 0,
-        totalPrice: BASE_PRICE 
+    if (basePizzaId) {
+      const pizzaId = parseInt(basePizzaId, 10);
+      if (!Number.isInteger(pizzaId) || pizzaId <= 0) {
+        return res.status(400).json({ error: 'Invalid pizza ID' });
+      }
+      
+      const pizza = await Pizza.findByPk(pizzaId);
+      if (!pizza) {
+        return res.status(404).json({ error: 'Pizza not found' });
+      }
+      
+      basePrice = parseFloat(pizza.basePrice);
+      baseToppingIds = pizza.baseToppings || [];
+    }
+    
+    // Calculate additional toppings price (excluding base toppings)
+    const additionalToppingIds = toppingIds.filter(id => !baseToppingIds.includes(id));
+    
+    let additionalToppingsPrice = 0;
+    if (additionalToppingIds.length > 0) {
+      const toppings = await Topping.findAll({
+        where: { id: additionalToppingIds }
       });
+
+      additionalToppingsPrice = toppings.reduce((sum, topping) => {
+        return sum + parseFloat(topping.price);
+      }, 0);
     }
 
-    const toppings = await Topping.findAll({
-      where: { id: toppingIds }
-    });
-
-    const toppingsPrice = toppings.reduce((sum, topping) => {
-      return sum + parseFloat(topping.price);
-    }, 0);
-
-    const totalPrice = BASE_PRICE + toppingsPrice;
+    const totalPrice = basePrice + additionalToppingsPrice;
 
     res.json({
-      basePrice: BASE_PRICE,
-      toppingsPrice: toppingsPrice.toFixed(2),
+      basePrice: basePrice.toFixed(2),
+      toppingsPrice: additionalToppingsPrice.toFixed(2),
       totalPrice: totalPrice.toFixed(2)
     });
   } catch (error) {

@@ -13,9 +13,21 @@
             <p>Build your perfect pizza and get it delivered to your door!</p>
         </header>
 
-        <!-- Step 1: Choose Toppings -->
-        <section id="toppings-section" class="section active">
-            <h2>Step 1: Choose Your Toppings</h2>
+        <!-- Step 1: Choose Pizza -->
+        <section id="pizza-section" class="section active">
+            <h2>Step 1: Choose Your Pizza</h2>
+            <div id="pizzas-list" class="pizzas-grid">
+                <!-- Pizzas will be loaded here dynamically -->
+            </div>
+            <button id="next-to-toppings" class="btn btn-primary">Next: Add Extra Toppings</button>
+        </section>
+
+        <!-- Step 2: Choose Extra Toppings -->
+        <section id="toppings-section" class="section">
+            <h2>Step 2: Add Extra Toppings (Optional)</h2>
+            <div id="selected-pizza-info" class="pizza-info">
+                <!-- Selected pizza info will be shown here -->
+            </div>
             <div id="toppings-list" class="toppings-grid">
                 <!-- Toppings will be loaded here dynamically -->
             </div>
@@ -26,7 +38,7 @@
                         <span>$<span id="base-price">8.00</span></span>
                     </div>
                     <div class="price-item">
-                        <span>Toppings:</span>
+                        <span>Extra Toppings:</span>
                         <span>$<span id="toppings-price">0.00</span></span>
                     </div>
                     <div class="price-item total">
@@ -35,12 +47,15 @@
                     </div>
                 </div>
             </div>
-            <button id="next-to-address" class="btn btn-primary">Next: Enter Address</button>
+            <div class="button-group">
+                <button id="back-to-pizzas" class="btn btn-secondary">Back</button>
+                <button id="next-to-address" class="btn btn-primary">Next: Enter Address</button>
+            </div>
         </section>
 
-        <!-- Step 2: Enter Address -->
+        <!-- Step 3: Enter Address -->
         <section id="address-section" class="section">
-            <h2>Step 2: Delivery Address</h2>
+            <h2>Step 3: Delivery Address</h2>
             <div class="form-group">
                 <label for="address">Enter your delivery address:</label>
                 <textarea id="address" rows="4" placeholder="123 Main Street&#10;Apt 4B&#10;New York, NY 10001"></textarea>
@@ -68,9 +83,9 @@
             </div>
         </section>
 
-        <!-- Step 3: Checkout -->
+        <!-- Step 4: Checkout -->
         <section id="checkout-section" class="section">
-            <h2>Step 3: Review & Pay</h2>
+            <h2>Step 4: Review & Pay</h2>
             <div class="order-summary">
                 <h3>Order Summary</h3>
                 <div id="order-details">

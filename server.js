@@ -5,6 +5,7 @@ const path = require('path');
 const sequelize = require('./config/database');
 const toppingRoutes = require('./routes/toppings');
 const orderRoutes = require('./routes/orders');
+const pizzaRoutes = require('./routes/pizzas');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,6 +19,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Routes
 app.use('/api/toppings', toppingRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/pizzas', pizzaRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -47,6 +49,51 @@ const initializeApp = async () => {
         { name: 'Extra Cheese', price: 2.00 }
       ]);
       console.log('Initial toppings seeded');
+    }
+    
+    // Seed base pizzas if needed
+    const Pizza = require('./models/Pizza');
+    const pizzaCount = await Pizza.count();
+    if (pizzaCount === 0) {
+      await Pizza.bulkCreate([
+        { 
+          name: 'Margherita', 
+          description: 'Classic pizza with tomato sauce, mozzarella, and basil',
+          basePrice: 8.00,
+          baseToppings: [1] // Cheese
+        },
+        { 
+          name: 'Pepperoni', 
+          description: 'Tomato sauce, mozzarella, and pepperoni',
+          basePrice: 10.00,
+          baseToppings: [1, 2] // Cheese, Pepperoni
+        },
+        { 
+          name: 'Four Cheese', 
+          description: 'A blend of four delicious cheeses',
+          basePrice: 11.00,
+          baseToppings: [1, 10] // Cheese, Extra Cheese
+        },
+        { 
+          name: 'Vegetarian', 
+          description: 'Fresh vegetables with mozzarella',
+          basePrice: 10.50,
+          baseToppings: [1, 3, 4, 8] // Cheese, Mushrooms, Onions, Green Peppers
+        },
+        { 
+          name: 'Hawaiian', 
+          description: 'Bacon, pineapple, and mozzarella',
+          basePrice: 10.50,
+          baseToppings: [1, 6, 9] // Cheese, Bacon, Pineapple
+        },
+        { 
+          name: 'Meat Lovers', 
+          description: 'Loaded with pepperoni, sausage, and bacon',
+          basePrice: 12.00,
+          baseToppings: [1, 2, 5, 6] // Cheese, Pepperoni, Sausage, Bacon
+        }
+      ]);
+      console.log('Base pizzas seeded');
     }
     
     app.listen(PORT, () => {

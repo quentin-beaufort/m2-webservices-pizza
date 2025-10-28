@@ -7,6 +7,11 @@ const Order = sequelize.define('Order', {
     primaryKey: true,
     autoIncrement: true
   },
+  basePizzaId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1
+  },
   toppings: {
     type: DataTypes.TEXT,
     allowNull: false,
