@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import Pizza from '../models/Pizza.js';
+
 const router = express.Router();
-const Pizza = require('../models/Pizza');
 
 // Get all pizzas
 router.get('/', async (req, res) => {
@@ -39,4 +40,4 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

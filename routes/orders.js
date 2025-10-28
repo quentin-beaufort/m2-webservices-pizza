@@ -1,9 +1,10 @@
-const express = require('express');
+import express from 'express';
+import Order from '../models/Order.js';
+import Topping from '../models/Topping.js';
+import Pizza from '../models/Pizza.js';
+import { Op } from 'sequelize';
+
 const router = express.Router();
-const Order = require('../models/Order');
-const Topping = require('../models/Topping');
-const Pizza = require('../models/Pizza');
-const { Op } = require('sequelize');
 
 // Get all orders (for admin)
 router.get('/', async (req, res) => {
@@ -165,4 +166,4 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
