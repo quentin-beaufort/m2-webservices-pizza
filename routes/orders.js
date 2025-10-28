@@ -3,6 +3,38 @@ const router = express.Router();
 const Order = require('../models/Order');
 const Topping = require('../models/Topping');
 const Pizza = require('../models/Pizza');
+const { Op } = require('sequelize');
+
+// Get all orders (for admin)
+router.get('/', async (req, res) => {
+  try {
+    const { sortBy = 'createdAt', sortOrder = 'DESC', status } = req.query;
+    
+    // Build where clause for filtering
+    const whereClause = {};
+    if (status && status !== 'all') {
+      whereClause.status = status;
+    }
+    
+    // Validate sort parameters
+    const validSortFields = ['id', 'createdAt', 'totalPrice', 'status'];
+    const validSortOrders = ['ASC', 'DESC'];
+    
+    const sortField = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
+    const sortDirection = validSortOrders.includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
+    
+    // Fetch all orders with sorting and filtering
+    const orders = await Order.findAll({
+      where: whereClause,
+      order: [[sortField, sortDirection]]
+    });
+    
+    res.json(orders);
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json({ error: 'Failed to fetch orders' });
+  }
+});
 
 // Create a new order
 router.post('/', async (req, res) => {
