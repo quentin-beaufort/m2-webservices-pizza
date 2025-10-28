@@ -82,9 +82,9 @@ const initializeApp = async () => {
         },
         { 
           name: 'Hawaiian', 
-          description: 'Ham, pineapple, and mozzarella',
+          description: 'Bacon, pineapple, and mozzarella',
           basePrice: 10.50,
-          baseToppings: [1, 6, 9] // Cheese, Bacon (ham substitute), Pineapple
+          baseToppings: [1, 6, 9] // Cheese, Bacon, Pineapple
         },
         { 
           name: 'Meat Lovers', 
