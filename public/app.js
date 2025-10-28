@@ -1,6 +1,13 @@
 // API base URL
 const API_BASE = '/api';
 
+// Helper function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // Application state
 const state = {
     toppings: [],
@@ -192,10 +199,12 @@ function renderOrderSummary() {
     
     let toppingsHtml = '';
     if (selectedToppings.length > 0) {
-        toppingsHtml = selectedToppings.map(t => t.name).join(', ');
+        toppingsHtml = selectedToppings.map(t => escapeHtml(t.name)).join(', ');
     } else {
         toppingsHtml = 'No toppings (plain pizza)';
     }
+    
+    const escapedAddress = escapeHtml(state.address).replace(/\n/g, '<br>');
     
     orderDetails.innerHTML = `
         <div class="order-detail-item">
@@ -203,7 +212,7 @@ function renderOrderSummary() {
         </div>
         <div class="order-detail-item">
             <span class="order-detail-label">Delivery Address:</span><br>
-            ${state.address.replace(/\n/g, '<br>')}
+            ${escapedAddress}
         </div>
     `;
 }
@@ -241,21 +250,23 @@ function renderConfirmation(order) {
     
     let toppingsHtml = '';
     if (selectedToppings.length > 0) {
-        toppingsHtml = selectedToppings.map(t => t.name).join(', ');
+        toppingsHtml = selectedToppings.map(t => escapeHtml(t.name)).join(', ');
     } else {
         toppingsHtml = 'No toppings (plain pizza)';
     }
     
+    const escapedAddress = escapeHtml(order.address).replace(/\n/g, '<br>');
+    
     confirmationDetails.innerHTML = `
         <div class="order-detail-item">
-            <span class="order-detail-label">Order #:</span> ${order.id}
+            <span class="order-detail-label">Order #:</span> ${escapeHtml(String(order.id))}
         </div>
         <div class="order-detail-item">
             <span class="order-detail-label">Toppings:</span> ${toppingsHtml}
         </div>
         <div class="order-detail-item">
             <span class="order-detail-label">Delivery Address:</span><br>
-            ${order.address.replace(/\n/g, '<br>')}
+            ${escapedAddress}
         </div>
         <div class="order-detail-item">
             <span class="order-detail-label">Total Paid:</span> $${parseFloat(order.totalPrice).toFixed(2)}

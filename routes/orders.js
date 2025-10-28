@@ -16,6 +16,14 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'toppingIds must be an array' });
     }
 
+    // Validate that all toppingIds are positive integers
+    const validIds = toppingIds.every(id => 
+      Number.isInteger(id) && id > 0
+    );
+    if (!validIds) {
+      return res.status(400).json({ error: 'All topping IDs must be positive integers' });
+    }
+
     const BASE_PRICE = 8.00;
     const DELIVERY_FEE = 5.00;
 
@@ -55,7 +63,13 @@ router.post('/:id/confirm', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const order = await Order.findByPk(id);
+    // Validate that ID is a positive integer
+    const orderId = parseInt(id, 10);
+    if (!Number.isInteger(orderId) || orderId <= 0) {
+      return res.status(400).json({ error: 'Invalid order ID' });
+    }
+
+    const order = await Order.findByPk(orderId);
 
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
@@ -82,7 +96,14 @@ router.post('/:id/confirm', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const order = await Order.findByPk(id);
+    
+    // Validate that ID is a positive integer
+    const orderId = parseInt(id, 10);
+    if (!Number.isInteger(orderId) || orderId <= 0) {
+      return res.status(400).json({ error: 'Invalid order ID' });
+    }
+    
+    const order = await Order.findByPk(orderId);
 
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });

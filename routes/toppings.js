@@ -24,6 +24,14 @@ router.post('/calculate-price', async (req, res) => {
       return res.status(400).json({ error: 'toppingIds must be an array' });
     }
 
+    // Validate that all toppingIds are positive integers
+    const validIds = toppingIds.every(id => 
+      Number.isInteger(id) && id > 0
+    );
+    if (!validIds) {
+      return res.status(400).json({ error: 'All topping IDs must be positive integers' });
+    }
+
     const BASE_PRICE = 8.00; // Base pizza price
     
     if (toppingIds.length === 0) {
