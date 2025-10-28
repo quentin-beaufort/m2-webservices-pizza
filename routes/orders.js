@@ -2,11 +2,12 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 const Topping = require('../models/Topping');
+const Pizza = require('../models/Pizza');
 
 // Create a new order
 router.post('/', async (req, res) => {
   try {
-    const { toppingIds, address } = req.body;
+    const { toppingIds, address, basePizzaId } = req.body;
 
     if (!address || address.trim() === '') {
       return res.status(400).json({ error: 'Address is required' });
@@ -20,29 +21,45 @@ router.post('/', async (req, res) => {
     const validIds = toppingIds.every(id => 
       Number.isInteger(id) && id > 0
     );
-    if (!validIds) {
+    if (!validIds && toppingIds.length > 0) {
       return res.status(400).json({ error: 'All topping IDs must be positive integers' });
     }
 
-    const BASE_PRICE = 8.00;
     const DELIVERY_FEE = 5.00;
 
-    // Calculate pizza price
-    let toppingsPrice = 0;
-    if (toppingIds.length > 0) {
+    // Get base pizza
+    let pizzaIdToUse = basePizzaId || 1; // Default to Margherita if not specified
+    const pizzaId = parseInt(pizzaIdToUse, 10);
+    if (!Number.isInteger(pizzaId) || pizzaId <= 0) {
+      return res.status(400).json({ error: 'Invalid pizza ID' });
+    }
+    
+    const pizza = await Pizza.findByPk(pizzaId);
+    if (!pizza) {
+      return res.status(404).json({ error: 'Pizza not found' });
+    }
+    
+    const basePrice = parseFloat(pizza.basePrice);
+    const baseToppingIds = pizza.baseToppings || [];
+
+    // Calculate additional toppings price (excluding base toppings)
+    const additionalToppingIds = toppingIds.filter(id => !baseToppingIds.includes(id));
+    let additionalToppingsPrice = 0;
+    if (additionalToppingIds.length > 0) {
       const toppings = await Topping.findAll({
-        where: { id: toppingIds }
+        where: { id: additionalToppingIds }
       });
-      toppingsPrice = toppings.reduce((sum, topping) => {
+      additionalToppingsPrice = toppings.reduce((sum, topping) => {
         return sum + parseFloat(topping.price);
       }, 0);
     }
 
-    const pizzaPrice = BASE_PRICE + toppingsPrice;
+    const pizzaPrice = basePrice + additionalToppingsPrice;
     const totalPrice = pizzaPrice + DELIVERY_FEE;
 
     // Create order
     const order = await Order.create({
+      basePizzaId: pizzaId,
       toppings: toppingIds,
       address: address.trim(),
       pizzaPrice: pizzaPrice.toFixed(2),
