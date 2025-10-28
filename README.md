@@ -27,6 +27,7 @@ A full-stack web application that allows customers to order pizza with custom to
 - Input validation and security measures
 - Automatic database initialization and seeding
 - Support for base pizzas with pre-defined toppings
+- **Admin API** for managing orders with sorting and filtering
 
 ### Frontend
 - 4-step ordering process:
@@ -39,6 +40,13 @@ A full-stack web application that allows customers to order pizza with custom to
 - Clear distinction between base and extra toppings
 - Form validation
 - Smooth animations and transitions
+- **Admin Dashboard** for order management:
+  - View all orders in a table
+  - Sort by date, price, status, or ID
+  - Filter by order status
+  - View detailed order information
+  - Real-time statistics (total orders, revenue, etc.)
+  - Password-protected access
 
 ## Installation
 
@@ -78,10 +86,25 @@ http://localhost:3000
 
 ### Orders
 
+- `GET /api/orders` - Get all orders (admin) with optional query params:
+  - `sortBy`: Field to sort by (`id`, `createdAt`, `totalPrice`, `status`)
+  - `sortOrder`: Sort direction (`ASC`, `DESC`)
+  - `status`: Filter by status (`all`, `pending`, `confirmed`)
 - `POST /api/orders` - Create a new order
   - Body: `{ "basePizzaId": 1, "toppingIds": [1, 2], "address": "123 Main St..." }`
 - `GET /api/orders/:id` - Get order by ID
 - `POST /api/orders/:id/confirm` - Confirm order (payment)
+
+## Admin Dashboard
+
+Access the admin dashboard at `/admin.html`:
+- **Default Password**: `admin123`
+- View all orders in a sortable, filterable table
+- See real-time statistics
+- View detailed order information
+- Responsive design for all devices
+
+📖 See [ADMIN_DOCUMENTATION.md](./ADMIN_DOCUMENTATION.md) for complete admin features documentation.
 
 ## Security
 
@@ -108,15 +131,19 @@ m2-webservices-pizza/
 │   └── Topping.js           # Topping model
 ├── routes/
 │   ├── pizzas.js            # Pizza routes
-│   ├── orders.js            # Order routes
+│   ├── orders.js            # Order routes (with admin endpoint)
 │   └── toppings.js          # Topping routes
 ├── public/
 │   ├── index.html           # Main HTML file
 │   ├── styles.css           # Styles
-│   └── app.js               # Frontend JavaScript
+│   ├── app.js               # Frontend JavaScript
+│   ├── admin.html           # Admin dashboard HTML
+│   ├── admin.css            # Admin dashboard styles
+│   └── admin.js             # Admin dashboard JavaScript
 ├── server.js                # Express server
 ├── package.json             # Dependencies
-└── README.md                # This file
+├── README.md                # This file
+└── ADMIN_DOCUMENTATION.md   # Admin features documentation
 ```
 
 ## License
